@@ -383,7 +383,86 @@
       pointer-events: none;
     }
 
-    .sim3d-loading, .sim3d-view, .sim3d-legend, .sim3d-toast { z-index: 1; }
+    .sim3d-loading, .sim3d-view, .sim3d-legend, .sim3d-toast, .sim3d-circuits { z-index: 1; }
+
+    /* ECU circuit isolation buttons */
+    .sim3d-circuits {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+      max-width: calc(100% - 200px);
+      padding: 5px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: rgba(9, 12, 19, 0.72);
+      backdrop-filter: blur(8px);
+    }
+
+    .sim3d-circuits > span {
+      padding: 0 6px;
+      color: var(--faint);
+      font-size: 0.66rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .s3-circuit {
+      --c: var(--accent);
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 6px 11px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      background: none;
+      color: var(--muted);
+      font-size: 0.8rem;
+      font-weight: 600;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .s3-circuit::before {
+      content: "";
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--c);
+    }
+
+    .s3-circuit:hover { background: var(--surface-3); color: var(--text); }
+
+    .s3-circuit[aria-pressed="true"] {
+      border-color: color-mix(in srgb, var(--c) 60%, transparent);
+      background: color-mix(in srgb, var(--c) 18%, transparent);
+      color: var(--text);
+      box-shadow: 0 0 18px -6px var(--c);
+    }
+
+    .s3-circuit[hidden] { display: none; }
+    .s3-circuit--all { color: var(--text); }
+    .s3-circuit--all::before { display: none; }
+    .s3-circuit:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+    @media (max-width: 640px) {
+      .sim3d-circuits {
+        top: auto;
+        right: 12px;
+        bottom: 12px;
+        left: 12px;
+        max-width: none;
+      }
+
+      .sim3d-circuits > span { display: none; }
+      .s3-circuit { padding: 6px 8px; font-size: 0.74rem; }
+      .sim3d-toast { top: 60px; bottom: auto; }
+    }
 
     /* labels floating in the 3D scene */
     .s3-label {
@@ -986,6 +1065,13 @@
           <span><i style="background: var(--inj)"></i>ECU → injector</span>
           <span><i style="background: var(--ign)"></i>ECU → coil</span>
         </div>
+        <div class="sim3d-circuits" role="group" aria-label="Isolate an ECU circuit">
+          <span>ECU circuit</span>
+          <button class="s3-circuit" type="button" data-circuit="sensors" aria-pressed="false" style="--c: var(--sensor)">Sensor in</button>
+          <button class="s3-circuit" type="button" data-circuit="inj" aria-pressed="false" style="--c: var(--inj)">Inj driver</button>
+          <button class="s3-circuit" type="button" data-circuit="ign" aria-pressed="false" style="--c: var(--ign)">Ign driver</button>
+          <button class="s3-circuit s3-circuit--all" type="button" data-circuit="" aria-pressed="true" hidden>Show all ✕</button>
+        </div>
         <div class="sim3d-toast" id="s3Toast" role="status" aria-live="polite"></div>
       </div>
 
@@ -1151,7 +1237,8 @@
       nextStep: $('s3NextStep'),
       stepList: $('s3StepList'),
       ecu: $('s3Ecu'),
-      cyls: $('s3Cyls')
+      cyls: $('s3Cyls'),
+      circuits: document.querySelectorAll('[data-circuit]')
     };
 
     const sim = {
@@ -1165,6 +1252,7 @@
       step: 0,
       nominal: null,
       state: null,
+      isolate: null,
       show: { xray: true, labels: true, wires: true, flow: true, spin: false }
     };
 
@@ -1625,7 +1713,8 @@
         points: [
           'Inputs: CKP, CMP, TPS, MAP, ECT, O₂ and knock sensors.',
           'Outputs: 4 injectors and 4 coils. Real ECUs also drive the throttle motor, idle, fans and pumps, and run diagnostics.',
-          'Everything is scheduled in crank degrees, not clock time.'
+          'Everything is scheduled in crank degrees, not clock time.',
+          'Click SENSOR IN, INJ DRIVERS or IGN DRIVERS on the ECU board (or the circuit buttons at the top left) to isolate that circuit.'
         ],
         focus: ['ecu', 'wires-sensors', 'wires-inj', 'wires-ign', 'ckp', 'cmp', 'tps', 'map', 'ect', 'o2', 'knock', 'injectors', 'coils'],
         view: 'ecu',
@@ -2375,10 +2464,19 @@
         return material;
       });
       mesh(new THREE.BoxGeometry(0.1, 0.84, 0.16), plastic, ecu, [0.8, 0, -0.02]);
+      // Clickable board areas (SENSOR IN, INJ DRIVERS, IGN DRIVERS with their pins); each isolates
+      // one circuit and glows while hovered or selected.
+      const hotspots = [['sensors', COLORS.sensor, 330, 18, 512, 150], ['inj', COLORS.inj, 330, 158, 512, 226], ['ign', COLORS.ign, 318, 234, 512, 308]]
+        .map(([circuit, color, x0, y0, x1, y1]) => {
+          const material = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
+          const area = mesh(new THREE.PlaneGeometry((x1 - x0) / 512 * 1.4, (y1 - y0) / 330 * 0.9), material, ecu, px((x0 + x1) / 2, (y0 + y1) / 2, -0.02));
+          area.userData.circuit = circuit;
+          return { circuit, area, material };
+        });
       ecu.updateMatrixWorld(true);
       const pins = Array.from({ length: 15 }, (_, i) => ecu.localToWorld(new THREE.Vector3(0.86, (0.5 - (30 + 19 * i) / 330) * 0.9, -0.02)));
       const out = new THREE.Vector3(1, 0, 0).transformDirection(ecu.matrixWorld);
-      return { leds: { pwr: leds[0], ckp: leds[1], inj: leds[2], ign: leds[3] }, pins, out };
+      return { leds: { pwr: leds[0], ckp: leds[1], inj: leds[2], ign: leds[3] }, pins, out, hotspots };
     }
 
     // Harness: every wire leaves its own ECU pin, joins a trunk above the engine and branches off.
@@ -2591,10 +2689,42 @@
       controls.target.set(start.target[0], start.target[1], start.target[2]);
 
       parts = buildScene();
+      watchCircuitClicks(renderer.domElement);
       new ResizeObserver(resizeStage).observe(dom.stage);
       resizeStage();
       applyToggles();
       dom.loading.hidden = true;
+    }
+
+    // Hovering the ECU board shows which areas are clickable; a click (not an orbit drag) isolates one.
+    function watchCircuitClicks(canvas) {
+      const raycaster = new THREE.Raycaster();
+      const pointer = new THREE.Vector2();
+      const areas = parts.ecu.hotspots.map(h => h.area);
+      const circuitAt = event => {
+        const rect = canvas.getBoundingClientRect();
+        pointer.set((event.clientX - rect.left) / rect.width * 2 - 1, -(event.clientY - rect.top) / rect.height * 2 + 1);
+        raycaster.setFromCamera(pointer, camera);
+        return raycaster.intersectObjects(areas, false)[0]?.object.userData.circuit ?? null;
+      };
+      let down = null;
+      canvas.addEventListener('pointerdown', event => {
+        down = { x: event.clientX, y: event.clientY, time: performance.now() };
+      });
+      canvas.addEventListener('pointerup', event => {
+        const click = down && Math.hypot(event.clientX - down.x, event.clientY - down.y) < 6 && performance.now() - down.time < 600;
+        down = null;
+        const circuit = click && circuitAt(event);
+        if (circuit) setIsolate(circuit);
+      });
+      canvas.addEventListener('pointermove', event => {
+        if (event.buttons) return;
+        const circuit = circuitAt(event);
+        if (circuit === hoverCircuit) return;
+        hoverCircuit = circuit;
+        canvas.style.cursor = circuit ? 'pointer' : '';
+        paintHotspots();
+      });
     }
 
     function resizeStage() {
@@ -2930,12 +3060,14 @@
     function updateLabelVisibility() {
       if (!parts) return;
       const step = STEPS[sim.step];
+      const focus = activeFocus();
       const compact = dom.stage.clientWidth < 640; // phones: only the ECU label in overview steps
       for (const label of parts.labels.list) {
-        const wanted = step.focus === 'all' ? label.overview && (!compact || label.id === 'ecu') : step.focus.includes(label.group);
+        const wanted = focus === 'all' ? label.overview && (!compact || label.id === 'ecu') : focus.includes(label.group);
         label.obj.visible = sim.show.labels && Boolean(wanted);
       }
-      for (const label of parts.labels.cyl) label.obj.visible = sim.show.labels && step.cylLabels !== false;
+      const cylLabels = !sim.isolate && step.cylLabels !== false;
+      for (const label of parts.labels.cyl) label.obj.visible = sim.show.labels && cylLabels;
     }
 
     function setXray(on) {
@@ -3351,6 +3483,7 @@
 
     function applyStep(index, { fly = true } = {}) {
       sim.step = clamp(index, 0, STEPS.length - 1);
+      sim.isolate = null;
       const step = STEPS[sim.step];
       if (step.angle !== undefined) {
         setCrank(step.angle);
@@ -3359,13 +3492,62 @@
         sim.playing = true;
       }
       renderStep();
+      applyFocus();
+      if (parts && fly) flyTo(step.view);
+    }
+
+    // ECU circuits that can be isolated from the board, the circuit buttons or the keyboard.
+    const CIRCUITS = {
+      sensors: {
+        name: 'Sensor inputs',
+        note: 'Seven sensors report to the ECU: crank and cam position, throttle, manifold pressure, coolant, oxygen and knock.',
+        focus: ['ecu', 'wires-sensors', 'ckp', 'cmp', 'tps', 'map', 'ect', 'o2', 'knock']
+      },
+      inj: {
+        name: 'Injector drivers',
+        note: 'The ECU switches each injector on for a pulse of a few milliseconds, one cylinder at a time in firing order 1-3-4-2.',
+        focus: ['ecu', 'wires-inj', 'injectors', 'fuel']
+      },
+      ign: {
+        name: 'Ignition drivers',
+        note: 'The ECU charges each coil (dwell), then cuts the current so the coil fires its spark plug, in firing order 1-3-4-2.',
+        focus: ['ecu', 'wires-ign', 'coils', 'plugs']
+      }
+    };
+    let hoverCircuit = null;
+
+    const activeFocus = () => (sim.isolate ? CIRCUITS[sim.isolate].focus : STEPS[sim.step].focus);
+
+    function applyFocus() {
+      for (const button of dom.circuits) {
+        button.setAttribute('aria-pressed', String(button.dataset.circuit === (sim.isolate ?? '')));
+        if (!button.dataset.circuit) button.hidden = !sim.isolate;
+      }
       if (!parts) return;
-      const focus = step.focus === 'all' ? null : new Set(step.focus);
+      const focus = activeFocus() === 'all' ? null : new Set(activeFocus());
+      const blockAlpha = sim.isolate ? 0.3 : 0.5; // keep a faint outline of the engine for context
       for (const [name, group] of groups) {
-        group.target = !focus || focus.has(name) ? 1 : name === 'block' ? 0.5 : GHOST;
+        group.target = !focus || focus.has(name) ? 1 : name === 'block' ? blockAlpha : GHOST;
       }
       updateLabelVisibility();
-      if (fly) flyTo(step.view);
+      paintHotspots();
+    }
+
+    function setIsolate(circuit) {
+      sim.isolate = circuit && circuit !== sim.isolate ? circuit : null; // clicking the same circuit again clears it
+      applyFocus();
+      if (!sim.isolate) return;
+      const view = STEPS[sim.step].view;
+      if (parts && view !== 'overview' && view !== 'ecu') flyTo('ecu');
+      const c = CIRCUITS[sim.isolate];
+      showToast(`<b>${c.name}</b> ${c.note}`);
+    }
+
+    function paintHotspots() {
+      if (!parts) return;
+      for (const h of parts.ecu.hotspots) {
+        h.material.opacity = sim.isolate === h.circuit ? 0.3 : hoverCircuit === h.circuit ? 0.16 : 0;
+      }
     }
 
     function showToast(html) {
@@ -3485,6 +3667,7 @@
     start();
     dom.introStart.focus({ preventScroll: true });
     dom.resetView.addEventListener('click', () => flyTo(STEPS[sim.step].view));
+    for (const button of dom.circuits) button.addEventListener('click', () => setIsolate(button.dataset.circuit || null));
     dom.play.addEventListener('click', () => { sim.playing = !sim.playing; });
     dom.zero.addEventListener('click', () => { sim.playing = false; setCrank(0); });
     dom.back10.addEventListener('click', () => nudge(-10));
@@ -3541,7 +3724,9 @@
       }
       const target = event.target;
       if (target instanceof HTMLInputElement && target.type === 'range' && event.key.startsWith('Arrow')) return;
-      if (event.code === 'Space') {
+      if (event.key === 'Escape' && sim.isolate) {
+        setIsolate(null);
+      } else if (event.code === 'Space') {
         // Like a video player: Space is always play/pause here (Enter still activates buttons).
         event.preventDefault();
         if (!event.repeat) sim.playing = !sim.playing;
