@@ -4,85 +4,164 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Inline 4-Cylinder Engine: 3D Simulator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --bg: #0c111b;
-      --panel: #121a28;
-      --panel-2: #172335;
-      --text: #eef5ff;
-      --muted: #9fb0c5;
-      --line: #2b3b55;
-      --power: #ffb04a;
-      --exhaust: #a9b0bb;
-      --intake: #58c8ff;
-      --compression: #b288ff;
-      --ok: #7ee787;
-      --warn: #ffd166;
-      --bad: #ff6b6b;
-      --accent: #66e3c4;
-      --shadow: 0 18px 60px rgba(0, 0, 0, 0.35);
-      --radius: 22px;
+      /* surfaces */
+      --bg: #06080d;
+      --surface: rgba(15, 19, 30, 0.78);
+      --surface-2: rgba(255, 255, 255, 0.035);
+      --surface-3: rgba(255, 255, 255, 0.065);
+      --border: rgba(148, 163, 184, 0.10);
+      --border-2: rgba(148, 163, 184, 0.20);
+      --text: #eef1f7;
+      --muted: #8f9bb0;
+      --faint: #5f6b80;
+      /* interface accent */
+      --accent: #8b93ff;
+      --accent-2: #c49bff;
+      --accent-soft: rgba(139, 147, 255, 0.13);
+      --accent-line: rgba(139, 147, 255, 0.38);
+      /* the four strokes (also used by the 3D gas colours and the chart) */
+      --intake: #38bdf8;
+      --compression: #c084fc;
+      --power: #fb923c;
+      --exhaust: #94a3b8;
+      /* electronics signals */
+      --sensor: #f472b6;
+      --inj: #4ade80;
+      --ign: #facc15;
+      --ok: #4ade80;
+      --warn: #facc15;
+      --bad: #f87171;
+      --shadow: 0 24px 60px -24px rgba(0, 0, 0, 0.75);
+      --radius: 18px;
+      --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color-scheme: dark;
     }
 
     * { box-sizing: border-box; }
 
     body {
       margin: 0;
-      color: var(--text);
-      background:
-        radial-gradient(circle at 15% 10%, rgba(102, 227, 196, 0.15), transparent 28rem),
-        radial-gradient(circle at 80% 15%, rgba(88, 200, 255, 0.12), transparent 32rem),
-        linear-gradient(180deg, #0c111b 0%, #080b11 100%);
       min-height: 100vh;
+      color: var(--text);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
     }
 
     button, input, select { font: inherit; }
 
     .eyebrow {
-      margin: 0 0 8px;
+      margin: 0 0 6px;
       color: var(--accent);
-      text-transform: uppercase;
+      font-size: 0.7rem;
+      font-weight: 700;
       letter-spacing: 0.16em;
-      font-weight: 800;
-      font-size: 0.78rem;
+      text-transform: uppercase;
     }
 
     label {
       display: flex;
       justify-content: space-between;
       gap: 8px;
-      color: var(--muted);
-      font-size: 0.86rem;
       margin-bottom: 8px;
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 500;
     }
 
+    /* sliders: slim track with a gradient fill (--fill is set from script) */
     input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
       width: 100%;
-      accent-color: var(--accent);
+      height: 18px;
+      margin: 0;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-webkit-slider-runnable-track {
+      height: 4px;
+      border-radius: 99px;
+      background:
+        linear-gradient(90deg, var(--accent), var(--accent-2)) 0 / var(--fill, 0%) 100% no-repeat,
+        rgba(148, 163, 184, 0.18);
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      margin-top: -5px;
+      border-radius: 50%;
+      border: 3px solid var(--accent);
+      background: #fff;
+      box-shadow: 0 0 0 4px rgba(139, 147, 255, 0.18);
+    }
+
+    input[type="range"]::-moz-range-track {
+      height: 4px;
+      border-radius: 99px;
+      background: rgba(148, 163, 184, 0.18);
+    }
+
+    input[type="range"]::-moz-range-progress {
+      height: 4px;
+      border-radius: 99px;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      border: 3px solid var(--accent);
+      background: #fff;
     }
 
     .btn {
-      border: 1px solid rgba(159, 176, 197, 0.22);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--border-2);
+      background: var(--surface-2);
       color: var(--text);
-      background: rgba(255, 255, 255, 0.06);
-      border-radius: 13px;
-      padding: 10px 12px;
+      font-size: 0.86rem;
+      font-weight: 600;
+      white-space: nowrap;
       cursor: pointer;
-      transition: transform 0.12s ease, background 0.12s ease, border-color 0.12s ease;
-      font-weight: 800;
+      transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
     }
 
     .btn:hover {
-      transform: translateY(-1px);
-      background: rgba(255, 255, 255, 0.10);
-      border-color: rgba(102, 227, 196, 0.5);
+      background: var(--surface-3);
+      border-color: var(--accent-line);
+    }
+
+    .btn:focus-visible,
+    .s3-step-btn:focus-visible,
+    summary:focus-visible,
+    input:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
     }
 
     .btn.primary {
-      background: linear-gradient(135deg, rgba(102, 227, 196, 0.23), rgba(88, 200, 255, 0.18));
-      border-color: rgba(102, 227, 196, 0.45);
+      border-color: transparent;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #0b0d18;
+      box-shadow: 0 8px 22px -10px rgba(139, 147, 255, 0.9);
     }
+
+    .btn.primary:hover { filter: brightness(1.08); }
 
     .nav-buttons {
       display: flex;
@@ -96,15 +175,15 @@
       inset: 0;
       color: var(--text);
       background:
-        radial-gradient(circle at 28% 18%, rgba(102, 227, 196, 0.10), transparent 38rem),
-        radial-gradient(circle at 78% 8%, rgba(88, 200, 255, 0.10), transparent 34rem),
-        #070b12;
+        radial-gradient(60rem 40rem at 30% 10%, rgba(139, 147, 255, 0.10), transparent 70%),
+        radial-gradient(50rem 36rem at 85% 0%, rgba(196, 155, 255, 0.07), transparent 70%),
+        var(--bg);
     }
 
     .sim3d .btn:disabled {
-      opacity: 0.45;
+      opacity: 0.4;
       cursor: default;
-      transform: none;
+      border-color: var(--border);
     }
 
     /* Intro: the short "how the machine works" brief shown on arrival. */
@@ -116,85 +195,107 @@
       place-items: center;
       padding: 16px;
       overflow-y: auto;
-      background: rgba(4, 7, 12, 0.72);
-      backdrop-filter: blur(6px);
+      background: rgba(4, 6, 10, 0.66);
+      backdrop-filter: blur(10px);
     }
 
     .intro[hidden] { display: none; }
 
     .intro-card {
-      width: min(760px, 100%);
-      padding: 26px 28px;
-      border-radius: var(--radius);
-      border: 1px solid rgba(102, 227, 196, 0.3);
-      background: linear-gradient(180deg, rgba(18, 26, 40, 0.98), rgba(10, 15, 24, 0.98));
-      box-shadow: var(--shadow);
+      position: relative;
+      width: min(780px, 100%);
+      padding: 30px 32px 26px;
+      border-radius: 24px;
+      border: 1px solid var(--border-2);
+      background:
+        radial-gradient(36rem 14rem at 0% 0%, rgba(139, 147, 255, 0.16), transparent 70%),
+        linear-gradient(180deg, rgba(18, 22, 35, 0.97), rgba(10, 13, 21, 0.98));
+      box-shadow: var(--shadow), inset 0 1px 0 rgba(255, 255, 255, 0.05);
     }
 
     .intro-card h1 {
-      margin: 0 0 10px;
-      font-size: clamp(1.6rem, 4vw, 2.4rem);
+      margin: 0 0 12px;
+      font-size: clamp(1.7rem, 4vw, 2.5rem);
+      font-weight: 800;
       line-height: 1.05;
-      letter-spacing: -0.04em;
+      letter-spacing: -0.035em;
+      background: linear-gradient(90deg, #fff 30%, var(--accent-2));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
     }
 
     .intro-card p {
       margin: 0 0 12px;
       color: var(--muted);
-      line-height: 1.55;
+      line-height: 1.6;
     }
 
-    .intro-card p strong { color: var(--text); }
+    .intro-card p strong { color: var(--text); font-weight: 600; }
 
     .intro-chain {
       display: grid;
       grid-template-columns: repeat(5, minmax(0, 1fr));
-      gap: 8px;
-      margin: 18px 0;
+      gap: 10px;
+      margin: 20px 0;
       padding: 0;
       list-style: none;
       counter-reset: chain;
     }
 
     .intro-chain li {
-      position: relative;
-      padding: 12px 10px;
+      padding: 14px 12px;
       border-radius: 14px;
-      border: 1px solid rgba(159, 176, 197, 0.16);
-      border-top: 3px solid var(--c);
-      background: rgba(255, 255, 255, 0.04);
-      font-size: 0.84rem;
-      line-height: 1.4;
+      border: 1px solid var(--border);
+      background: linear-gradient(180deg, color-mix(in srgb, var(--c) 12%, transparent), var(--surface-2) 70%);
       color: var(--muted);
+      font-size: 0.82rem;
+      line-height: 1.45;
     }
 
     .intro-chain b {
-      display: block;
-      margin-bottom: 4px;
-      color: var(--c);
-      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+      color: var(--text);
+      font-size: 0.98rem;
+      font-weight: 700;
     }
 
     .intro-chain b::before {
       counter-increment: chain;
-      content: counter(chain) ". ";
+      content: counter(chain);
+      display: inline-grid;
+      place-items: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--c);
+      color: #0b0d18;
+      font-size: 0.72rem;
+      font-weight: 800;
     }
 
-    .intro-line {
-      margin: 0 0 18px;
+    .intro-card .intro-line {
+      margin: 4px 0 20px;
       padding: 12px 14px;
-      border-radius: 14px;
-      background: rgba(102, 227, 196, 0.08);
-      border: 1px solid rgba(102, 227, 196, 0.25);
-      color: var(--text);
-      font-weight: 800;
+      border-radius: 12px;
+      border: 1px solid var(--accent-line);
+      background: var(--accent-soft);
+      font-family: var(--mono);
+      font-size: 0.92rem;
+      font-weight: 600;
       text-align: center;
+      letter-spacing: 0.02em;
+      color: var(--text);
     }
 
     .intro-card .nav-buttons { justify-content: flex-end; }
+    .intro-card .btn.primary { padding: 11px 20px; font-size: 0.95rem; }
 
     @media (max-width: 640px) {
-      .intro-card { padding: 20px 18px; }
+      .intro-card { padding: 22px 18px; }
       .intro-chain { grid-template-columns: 1fr; }
     }
 
@@ -211,17 +312,19 @@
       align-items: center;
       justify-content: space-between;
       gap: 14px;
-      padding: 10px 18px;
-      border-bottom: 1px solid rgba(159, 176, 197, 0.14);
-      background: rgba(255, 255, 255, 0.03);
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(8, 10, 16, 0.6);
+      backdrop-filter: blur(12px);
     }
 
-    .sim3d-top .eyebrow { margin: 0 0 2px; font-size: 0.72rem; }
+    .sim3d-top .eyebrow { margin: 0 0 2px; font-size: 0.66rem; }
 
     .sim3d-top h2 {
       margin: 0;
-      font-size: 1.2rem;
-      letter-spacing: -0.03em;
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
     }
 
     .sim3d-top-actions {
@@ -233,21 +336,37 @@
     }
 
     .sim3d-chip {
-      padding: 8px 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 12px;
       border-radius: 999px;
-      border: 1px solid rgba(102, 227, 196, 0.35);
-      background: rgba(102, 227, 196, 0.10);
-      font-size: 0.86rem;
-      font-weight: 800;
-      font-variant-numeric: tabular-nums;
+      border: 1px solid var(--border-2);
+      background: var(--surface-2);
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      font-weight: 500;
       white-space: nowrap;
+    }
+
+    .sim3d-chip::before {
+      content: "";
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--warn);
+    }
+
+    .sim3d-chip[data-state="playing"]::before {
+      background: var(--ok);
+      box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.2);
     }
 
     .sim3d-stage {
       position: relative;
       min-height: 0;
       overflow: hidden;
-      background: radial-gradient(ellipse at 50% 60%, rgba(88, 200, 255, 0.07), transparent 70%);
+      background: radial-gradient(ellipse 70% 65% at 45% 55%, rgba(139, 147, 255, 0.09), transparent 70%);
     }
 
     .sim3d-stage > canvas {
@@ -266,50 +385,58 @@
 
     .sim3d-loading, .sim3d-view, .sim3d-legend, .sim3d-toast { z-index: 1; }
 
+    /* labels floating in the 3D scene */
     .s3-label {
-      padding: 3px 8px;
+      --tone: var(--muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 9px;
       border-radius: 999px;
-      border: 1px solid rgba(159, 176, 197, 0.32);
-      background: rgba(7, 11, 18, 0.8);
+      border: 1px solid color-mix(in srgb, var(--tone) 45%, transparent);
+      background: rgba(9, 12, 19, 0.78);
+      backdrop-filter: blur(6px);
       color: var(--muted);
       font-size: 11px;
-      font-weight: 700;
+      font-weight: 500;
       line-height: 1.3;
       white-space: nowrap;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+      box-shadow: 0 6px 18px -8px rgba(0, 0, 0, 0.7);
     }
 
-    .s3-label b { color: var(--text); font-weight: 900; }
-    .s3-label.sensor { border-color: rgba(77, 157, 255, 0.75); }
-    .s3-label.sensor b { color: #9cc8ff; }
-    .s3-label.ecu { border-color: rgba(102, 227, 196, 0.8); font-size: 12px; }
-    .s3-label.ecu b { color: var(--accent); }
-    .s3-label.inj { border-color: rgba(126, 231, 135, 0.7); }
-    .s3-label.inj b { color: var(--ok); }
-    .s3-label.ign { border-color: rgba(255, 209, 102, 0.7); }
-    .s3-label.ign b { color: var(--warn); }
+    .s3-label b { color: var(--tone); font-weight: 700; }
+    .s3-label.mech { --tone: #b6c0d2; }
+    .s3-label.mech b { color: var(--text); }
+    .s3-label.sensor { --tone: var(--sensor); }
+    .s3-label.ecu { --tone: var(--accent); font-size: 12px; }
+    .s3-label.inj { --tone: var(--inj); }
+    .s3-label.ign { --tone: var(--ign); }
 
     .s3-label.cyl {
-      padding: 3px 8px 4px;
+      --tone: var(--stroke, var(--accent));
+      display: block;
+      padding: 3px 9px 4px;
       border-radius: 9px;
-      border-left: 4px solid var(--stroke, var(--accent));
+      border-left: 3px solid var(--tone);
       color: var(--text);
-      font-size: 11px;
-      line-height: 1.2;
-      font-variant-numeric: tabular-nums;
+      font-family: var(--mono);
+      font-size: 10.5px;
+      line-height: 1.25;
     }
+
+    .s3-label.cyl b { color: var(--text); }
 
     .s3-label.cyl span {
       display: block;
-      color: var(--stroke, var(--accent));
-      font-size: 10px;
-      font-weight: 900;
+      color: var(--tone);
+      font-family: Inter, system-ui, sans-serif;
+      font-size: 9.5px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
       text-transform: uppercase;
-      letter-spacing: 0.04em;
     }
 
-    .s3-label.force { border-color: rgba(255, 209, 102, 0.85); color: var(--text); font-variant-numeric: tabular-nums; }
-    .s3-label.force b { color: var(--warn); }
+    .s3-label.force { --tone: var(--ign); color: var(--text); font-family: var(--mono); }
 
     .sim3d-loading {
       position: absolute;
@@ -317,40 +444,40 @@
       display: grid;
       place-items: center;
       padding: 24px;
-      text-align: center;
       color: var(--muted);
-      font-weight: 800;
+      font-weight: 600;
       line-height: 1.5;
+      text-align: center;
     }
 
     .sim3d-loading[hidden] { display: none; }
 
     .sim3d-view {
       position: absolute;
-      top: 12px;
-      right: 12px;
+      top: 14px;
+      right: 14px;
     }
 
     .sim3d-view summary {
       list-style: none;
-      padding: 8px 12px;
-      background: rgba(7, 11, 18, 0.82);
-      font-size: 0.85rem;
+      background: rgba(9, 12, 19, 0.72);
+      backdrop-filter: blur(8px);
     }
 
     .sim3d-view summary::-webkit-details-marker { display: none; }
 
     .sim3d-view-panel {
       position: absolute;
-      top: calc(100% + 6px);
+      top: calc(100% + 8px);
       right: 0;
       display: grid;
       gap: 2px;
-      min-width: 210px;
-      padding: 8px 10px;
+      min-width: 220px;
+      padding: 8px 12px;
       border-radius: 14px;
-      border: 1px solid rgba(159, 176, 197, 0.2);
-      background: rgba(7, 11, 18, 0.95);
+      border: 1px solid var(--border-2);
+      background: rgba(12, 15, 24, 0.94);
+      backdrop-filter: blur(12px);
       box-shadow: var(--shadow);
     }
 
@@ -358,32 +485,33 @@
       display: flex;
       align-items: center;
       justify-content: flex-start;
-      gap: 8px;
+      gap: 10px;
       margin: 0;
-      padding: 6px 2px;
+      padding: 7px 2px;
       color: var(--text);
-      font-size: 0.86rem;
-      font-weight: 700;
+      font-size: 0.85rem;
+      font-weight: 500;
       cursor: pointer;
     }
 
-    .s3-toggle input { margin: 0; accent-color: var(--accent); }
+    .s3-toggle input { width: 15px; height: 15px; margin: 0; accent-color: var(--accent); }
 
     .sim3d-legend {
       position: absolute;
-      left: 12px;
-      bottom: 12px;
+      left: 14px;
+      bottom: 14px;
       display: flex;
       flex-wrap: wrap;
-      gap: 6px 12px;
-      max-width: min(560px, calc(100% - 24px));
-      padding: 8px 12px;
-      border-radius: 14px;
-      border: 1px solid rgba(159, 176, 197, 0.14);
-      background: rgba(7, 11, 18, 0.66);
+      gap: 6px 14px;
+      max-width: min(560px, calc(100% - 28px));
+      padding: 9px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: rgba(9, 12, 19, 0.68);
+      backdrop-filter: blur(8px);
       color: var(--muted);
-      font-size: 0.76rem;
-      font-weight: 700;
+      font-size: 0.74rem;
+      font-weight: 500;
       pointer-events: none;
     }
 
@@ -391,22 +519,23 @@
 
     .sim3d-legend i {
       display: inline-block;
-      width: 10px;
-      height: 10px;
-      border-radius: 3px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
     }
 
     .sim3d-toast {
       position: absolute;
-      right: 12px;
-      bottom: 12px;
-      max-width: min(460px, calc(100% - 24px));
-      padding: 10px 14px;
-      border-radius: 14px;
-      border: 1px solid rgba(102, 227, 196, 0.45);
-      background: rgba(7, 11, 18, 0.9);
-      font-size: 0.88rem;
-      font-weight: 700;
+      right: 14px;
+      bottom: 14px;
+      max-width: min(460px, calc(100% - 28px));
+      padding: 11px 15px;
+      border-radius: 12px;
+      border: 1px solid var(--accent-line);
+      background: rgba(12, 15, 26, 0.9);
+      backdrop-filter: blur(10px);
+      box-shadow: var(--shadow);
+      font-size: 0.86rem;
       line-height: 1.45;
       opacity: 0;
       transform: translateY(6px);
@@ -415,17 +544,17 @@
     }
 
     .sim3d-toast.show { opacity: 1; transform: none; }
-    .sim3d-toast b { color: var(--accent); }
+    .sim3d-toast b { color: var(--accent); font-family: var(--mono); }
 
     .sim3d-controls {
       grid-column: 1;
       grid-row: 3;
       display: grid;
-      gap: 10px;
+      gap: 12px;
       min-width: 0;
-      padding: 10px 14px 12px;
-      border-top: 1px solid rgba(159, 176, 197, 0.14);
-      background: rgba(255, 255, 255, 0.02);
+      padding: 12px 18px 14px;
+      border-top: 1px solid var(--border);
+      background: rgba(8, 10, 16, 0.55);
     }
 
     .sim3d-transport {
@@ -435,33 +564,47 @@
       gap: 6px;
     }
 
-    .sim3d-transport .btn { padding: 8px 11px; }
-    #s3Play { min-width: 96px; }
+    .sim3d-transport .btn {
+      padding: 7px 12px;
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+
+    #s3Play {
+      min-width: 100px;
+      font-family: Inter, system-ui, sans-serif;
+      font-weight: 700;
+    }
 
     .sim3d-keys {
       margin-left: auto;
-      color: var(--muted);
-      font-size: 0.76rem;
+      color: var(--faint);
+      font-size: 0.74rem;
     }
 
     .sim3d-sliders {
       display: grid;
       grid-template-columns: minmax(0, 1.8fr) repeat(4, minmax(0, 1fr));
-      gap: 10px;
+      gap: 18px;
     }
 
-    .s3-field label { margin-bottom: 4px; font-size: 0.8rem; }
+    .s3-field label { margin-bottom: 4px; font-size: 0.76rem; }
 
     .s3-field label span {
       color: var(--text);
-      font-weight: 800;
-      font-variant-numeric: tabular-nums;
+      font-family: var(--mono);
+      font-size: 0.74rem;
+      font-weight: 500;
     }
 
     .sim3d-timing {
       display: block;
       width: 100%;
       height: 196px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.015);
       cursor: ew-resize;
       touch-action: pan-y;
     }
@@ -474,78 +617,104 @@
       display: grid;
       align-content: start;
       gap: 12px;
-      padding: 14px;
-      border-left: 1px solid rgba(159, 176, 197, 0.14);
+      padding: 16px;
+      border-left: 1px solid var(--border);
+      background: rgba(8, 10, 16, 0.45);
+      scrollbar-width: thin;
+      scrollbar-color: rgba(148, 163, 184, 0.25) transparent;
     }
 
     .s3-card {
-      padding: 14px;
-      border-radius: 18px;
-      border: 1px solid rgba(159, 176, 197, 0.14);
-      background: rgba(255, 255, 255, 0.035);
+      padding: 16px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: var(--surface-2);
     }
 
     .s3-card h3 {
-      margin: 8px 0;
-      font-size: 1.2rem;
-      letter-spacing: -0.03em;
+      margin: 10px 0 8px;
+      font-size: 1.15rem;
+      font-weight: 700;
+      line-height: 1.25;
+      letter-spacing: -0.02em;
     }
 
     .s3-card h4 {
-      margin: 0 0 10px;
-      color: var(--muted);
-      font-size: 0.76rem;
-      letter-spacing: 0.12em;
+      margin: 0 0 12px;
+      color: var(--faint);
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
       text-transform: uppercase;
     }
 
     .s3-card p {
       margin: 0;
       color: var(--muted);
-      font-size: 0.93rem;
-      line-height: 1.5;
+      font-size: 0.9rem;
+      line-height: 1.6;
     }
 
     .s3-card ul {
-      margin: 10px 0 0;
-      padding-left: 18px;
-      font-size: 0.9rem;
-      line-height: 1.45;
+      margin: 12px 0 0;
+      padding-left: 0;
+      list-style: none;
+      font-size: 0.86rem;
+      line-height: 1.5;
     }
 
-    .s3-card li { margin: 5px 0; }
+    .s3-card li {
+      position: relative;
+      margin: 6px 0;
+      padding-left: 16px;
+    }
+
+    .s3-card li::before {
+      content: "";
+      position: absolute;
+      left: 2px;
+      top: 0.62em;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
 
     .s3-step-head {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 8px;
-      color: var(--muted);
-      font-size: 0.82rem;
-      font-weight: 800;
+      color: var(--faint);
+      font-family: var(--mono);
+      font-size: 0.74rem;
     }
 
     .s3-tag {
-      padding: 4px 9px;
+      padding: 4px 10px;
       border-radius: 999px;
-      border: 1px solid rgba(102, 227, 196, 0.35);
-      background: rgba(102, 227, 196, 0.12);
+      background: var(--accent-soft);
       color: var(--accent);
+      font-family: Inter, system-ui, sans-serif;
+      font-size: 0.72rem;
+      font-weight: 600;
     }
 
     .s3-live {
-      margin-top: 12px;
-      padding: 10px 12px;
-      border-radius: 13px;
-      border: 1px solid rgba(255, 209, 102, 0.28);
-      background: rgba(255, 209, 102, 0.08);
-      font-size: 0.88rem;
-      line-height: 1.45;
+      margin-top: 14px;
+      padding: 11px 13px;
+      border-radius: 12px;
+      border: 1px solid var(--accent-line);
+      background: linear-gradient(135deg, rgba(139, 147, 255, 0.12), rgba(196, 155, 255, 0.05));
+      color: #d8dcf5;
+      font-size: 0.84rem;
+      line-height: 1.55;
       font-variant-numeric: tabular-nums;
     }
 
+    .s3-live b { color: #fff; }
     .s3-live:empty { display: none; }
-    .s3-card .nav-buttons { margin-top: 12px; }
+    .s3-card .nav-buttons { margin-top: 14px; }
     .s3-card .nav-buttons .btn { flex: 1; }
 
     .s3-ecu {
@@ -556,35 +725,37 @@
 
     .s3-metric {
       min-width: 0;
-      padding: 8px 10px;
+      padding: 10px 11px;
       border-radius: 12px;
-      border: 1px solid rgba(159, 176, 197, 0.12);
-      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.025);
     }
 
     .s3-metric.wide { grid-column: 1 / -1; }
 
     .s3-metric span {
       display: block;
-      color: var(--muted);
-      font-size: 0.7rem;
-      font-weight: 800;
-      letter-spacing: 0.08em;
+      color: var(--faint);
+      font-size: 0.64rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
       text-transform: uppercase;
     }
 
     .s3-metric strong {
       display: block;
-      margin-top: 2px;
-      font-size: 1.02rem;
-      font-variant-numeric: tabular-nums;
+      margin-top: 4px;
+      font-family: var(--mono);
+      font-size: 0.98rem;
+      font-weight: 600;
     }
 
     .s3-metric small {
       display: block;
-      margin-top: 2px;
+      margin-top: 3px;
       color: var(--muted);
-      font-size: 0.76rem;
+      font-size: 0.72rem;
+      line-height: 1.4;
       font-variant-numeric: tabular-nums;
     }
 
@@ -595,12 +766,11 @@
     }
 
     .s3-cyl {
-      padding: 8px 10px;
+      padding: 10px 11px;
       border-radius: 12px;
-      border: 1px solid rgba(159, 176, 197, 0.14);
-      border-left: 4px solid var(--stroke);
-      background: rgba(255, 255, 255, 0.03);
-      font-size: 0.8rem;
+      border: 1px solid var(--border);
+      background: linear-gradient(135deg, color-mix(in srgb, var(--stroke) 14%, transparent), rgba(255, 255, 255, 0.02) 65%);
+      font-size: 0.76rem;
       font-variant-numeric: tabular-nums;
     }
 
@@ -608,58 +778,79 @@
       display: flex;
       justify-content: space-between;
       gap: 6px;
-      font-size: 0.92rem;
+      font-size: 0.9rem;
+      font-weight: 700;
     }
 
-    .s3-cyl strong em { color: var(--stroke); font-style: normal; }
+    .s3-cyl strong em {
+      color: var(--stroke);
+      font-size: 0.72rem;
+      font-style: normal;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
     .s3-cyl small { display: block; margin-top: 3px; color: var(--muted); }
+    .s3-cyl small[data-a] { color: var(--text); font-family: var(--mono); }
 
     .s3-cyl .bar {
-      height: 5px;
-      margin-top: 6px;
+      height: 3px;
+      margin-top: 8px;
       overflow: hidden;
       border-radius: 99px;
-      background: rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.07);
     }
 
     .s3-cyl .bar i {
       display: block;
       height: 100%;
+      border-radius: inherit;
       background: var(--stroke);
     }
 
-    .s3-steps { display: grid; gap: 6px; }
+    .s3-steps { display: grid; gap: 4px; }
 
     .s3-step-btn {
       display: grid;
       grid-template-columns: 26px 1fr;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
       padding: 7px 9px;
-      border-radius: 12px;
-      border: 1px solid rgba(159, 176, 197, 0.13);
-      background: rgba(255, 255, 255, 0.03);
+      border-radius: 10px;
+      border: 1px solid transparent;
+      background: none;
       color: var(--muted);
-      font-size: 0.86rem;
+      font-size: 0.84rem;
       text-align: left;
       cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease;
     }
+
+    .s3-step-btn:hover { background: var(--surface-2); color: var(--text); }
 
     .s3-step-btn b {
       display: inline-grid;
       place-items: center;
       width: 24px;
       height: 24px;
-      border-radius: 999px;
-      border: 1px solid rgba(159, 176, 197, 0.25);
+      border-radius: 8px;
+      background: var(--surface-3);
       color: var(--text);
-      font-size: 0.75rem;
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      font-weight: 600;
     }
 
     .s3-step-btn.active {
-      border-color: rgba(102, 227, 196, 0.55);
-      background: rgba(102, 227, 196, 0.10);
+      border-color: var(--accent-line);
+      background: var(--accent-soft);
       color: var(--text);
+    }
+
+    .s3-step-btn.active b {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #0b0d18;
     }
 
     @media (max-height: 760px) and (min-width: 861px) {
@@ -688,7 +879,7 @@
         position: sticky;
         top: 0;
         z-index: 2;
-        background: #0b111b;
+        background: rgba(8, 10, 16, 0.92);
       }
 
       .sim3d-stage {
@@ -699,19 +890,20 @@
 
       .sim3d-side {
         border-left: 0;
-        border-top: 1px solid rgba(159, 176, 197, 0.14);
+        border-top: 1px solid var(--border);
         overflow: visible;
       }
 
-      .sim3d-sliders { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .sim3d-sliders { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 16px; }
       .sim3d-legend { display: none; }
     }
 
     @media (max-width: 520px) {
-      .sim3d-top { padding: 8px 12px; }
-      .sim3d-top h2 { font-size: 1rem; }
+      .sim3d-top { padding: 10px 12px; }
+      .sim3d-top h2 { font-size: 0.98rem; }
       .sim3d-chip, #s3ResetView { display: none; }
-      .sim3d-transport .btn { padding: 8px 9px; }
+      .sim3d-controls { padding: 12px; }
+      .sim3d-transport .btn { padding: 7px 9px; }
       .s3-label { padding: 2px 6px; font-size: 9px; }
       .s3-label.cyl { padding: 2px 5px 3px; font-size: 9px; }
       .s3-label.cyl span { font-size: 8px; }
@@ -737,11 +929,11 @@
         and then turns that heat into <strong>motion</strong>.
       </p>
       <ol class="intro-chain">
-        <li style="--c: #7ee787"><b>Fuel</b>Petrol and air hold energy in their chemical bonds.</li>
-        <li style="--c: #ffe87a"><b>Fire</b>The spark lights the mixture; burning releases the energy as heat, very fast.</li>
-        <li style="--c: #ffb04a"><b>Pressure</b>The hot gas is trapped in the cylinder, so its pressure jumps to tens of bar.</li>
-        <li style="--c: #b288ff"><b>Push</b>That pressure pushes the piston down with kilonewtons of force.</li>
-        <li style="--c: #58c8ff"><b>Spin</b>The rod and crankshaft turn the push into rotation (torque) that drives the wheels.</li>
+        <li style="--c: var(--inj)"><b>Fuel</b>Petrol and air hold energy in their chemical bonds.</li>
+        <li style="--c: var(--ign)"><b>Fire</b>The spark lights the mixture; burning releases the energy as heat, very fast.</li>
+        <li style="--c: var(--power)"><b>Pressure</b>The hot gas is trapped in the cylinder, so its pressure jumps to tens of bar.</li>
+        <li style="--c: var(--compression)"><b>Push</b>That pressure pushes the piston down with kilonewtons of force.</li>
+        <li style="--c: var(--intake)"><b>Spin</b>The rod and crankshaft turn the push into rotation (torque) that drives the wheels.</li>
       </ol>
       <p>
         The other three strokes (intake, compression, exhaust) just get the cylinder ready for the next burn.
@@ -767,7 +959,7 @@
           <h2 id="s3Heading">Inline-4 engine + electronics</h2>
         </div>
         <div class="sim3d-top-actions">
-          <span class="sim3d-chip" id="s3Status">0°</span>
+          <span class="sim3d-chip" id="s3Status" data-state="playing">0°</span>
           <button class="btn" id="s3ResetView" type="button">Reset view</button>
           <button class="btn" id="s3Intro" type="button" aria-haspopup="dialog" aria-controls="intro">How it works</button>
         </div>
@@ -790,9 +982,9 @@
           <span><i style="background: var(--compression)"></i>Compression</span>
           <span><i style="background: var(--power)"></i>Power</span>
           <span><i style="background: var(--exhaust)"></i>Exhaust</span>
-          <span><i style="background: #4d9dff"></i>Sensor → ECU</span>
-          <span><i style="background: var(--ok)"></i>ECU → injector</span>
-          <span><i style="background: var(--warn)"></i>ECU → coil</span>
+          <span><i style="background: var(--sensor)"></i>Sensor → ECU</span>
+          <span><i style="background: var(--inj)"></i>ECU → injector</span>
+          <span><i style="background: var(--ign)"></i>ECU → coil</span>
         </div>
         <div class="sim3d-toast" id="s3Toast" role="status" aria-live="polite"></div>
       </div>
@@ -1479,7 +1671,9 @@
       plenumZ: 1.8
     };
     G.camZ = G.valveOffset + (G.camY - G.roof) * Math.tan(G.tilt);
-    const COLORS = { sensor: 0x4d9dff, inj: 0x7ee787, ign: 0xffd166, ecu: 0x66e3c4 };
+    const hexNum = hex => parseInt(hex.replace('#', ''), 16);
+    const TOKENS = { sensor: css('--sensor'), inj: css('--inj'), ign: css('--ign'), accent: css('--accent'), accent2: css('--accent-2') };
+    const COLORS = { sensor: hexNum(TOKENS.sensor), inj: hexNum(TOKENS.inj), ign: hexNum(TOKENS.ign), ecu: hexNum(TOKENS.accent) };
     const GHOST = 0.1;
     const groups = new Map();
     let YZ_TO_WORLD;
@@ -1606,14 +1800,14 @@
         points.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y)));
         g.stroke();
       };
-      const blue = 'rgba(126, 182, 255, 0.75)';
+      const blue = hexA(TOKENS.sensor, 0.75);
       const gold = 'rgba(214, 170, 84, 0.75)';
       for (let i = 0; i < 7; i++) trace([[506, pinY(i)], [462, pinY(i)], [418, 68 + i * 5]], blue);
       for (let i = 0; i < 5; i++) trace([[345, 70 + i * 7], [296, 70 + i * 7], [258, 124 + i * 8]], blue);
       for (let i = 0; i < 4; i++) trace([[256, 176 + i * 8], [300, 176 + i * 8], [345, 176 + i * 5]], gold);
-      for (let i = 0; i < 4; i++) trace([[415, 176 + i * 5], [456, pinY(7 + i)], [506, pinY(7 + i)]], 'rgba(126, 231, 135, 0.8)');
+      for (let i = 0; i < 4; i++) trace([[415, 176 + i * 5], [456, pinY(7 + i)], [506, pinY(7 + i)]], hexA(TOKENS.inj, 0.8));
       for (let i = 0; i < 4; i++) trace([[180 + i * 14, 214], [180 + i * 14, 240], [335 + i * 30, 250]], gold);
-      for (let i = 0; i < 4; i++) trace([[335 + i * 30, 276], [456, pinY(11 + i)], [506, pinY(11 + i)]], 'rgba(255, 209, 102, 0.85)');
+      for (let i = 0; i < 4; i++) trace([[335 + i * 30, 276], [456, pinY(11 + i)], [506, pinY(11 + i)]], hexA(TOKENS.ign, 0.85));
       g.fillStyle = '#d8b25a';
       for (let i = 0; i < 15; i++) g.fillRect(500, pinY(i) - 4, 12, 8);
       g.fillStyle = 'rgba(235, 245, 240, 0.92)';
@@ -1657,10 +1851,10 @@
     // ------------------------------------------------------------------ scene building
     function buildBlock(root) {
       const shell = std('block', {
-        color: 0xa9bdd3, metalness: 0.35, roughness: 0.45,
+        color: 0xb4bdd8, metalness: 0.35, roughness: 0.45,
         transparent: true, opacity: 0.1, depthWrite: false, side: THREE.DoubleSide
       });
-      const edges = own('block', new THREE.LineBasicMaterial({ color: 0x8cc4e6, transparent: true, opacity: 0.4 }));
+      const edges = own('block', new THREE.LineBasicMaterial({ color: 0xa5adff, transparent: true, opacity: 0.38 }));
       const boxes = [
         [-2.05, 2.05, -0.35, G.deck, -0.7, 0.7], // cylinder block and crankcase
         [-2.05, 2.05, G.deck, G.headTop, -0.72, 0.72], // cylinder head
@@ -1676,7 +1870,7 @@
         root.add(lines);
       }
       const linerMat = std('block', {
-        color: 0x9fc6e8, metalness: 0.2, roughness: 0.3,
+        color: 0xa5b4fc, metalness: 0.2, roughness: 0.3,
         transparent: true, opacity: 0.14, depthWrite: false, side: THREE.DoubleSide
       });
       const liners = new THREE.Group();
@@ -1864,7 +2058,7 @@
     }
 
     function buildArrows(root) {
-      const forceMat = new THREE.MeshStandardMaterial({ color: 0xffd166, emissive: 0xffb04a, emissiveIntensity: 0.7, roughness: 0.4 });
+      const forceMat = new THREE.MeshStandardMaterial({ color: COLORS.ign, emissive: 0xfb923c, emissiveIntensity: 0.7, roughness: 0.4 });
       const force = new THREE.Group();
       const head = mesh(new THREE.ConeGeometry(0.13, 0.26, 20).rotateX(Math.PI).translate(0, 0.13, 0), forceMat, force);
       const shaft = mesh(new THREE.CylinderGeometry(0.05, 0.05, 1, 16).translate(0, 0.5, 0), forceMat, force, [0, 0.26, 0]);
@@ -1872,7 +2066,7 @@
       root.add(force);
 
       // Curved arrow around the crank nose, pointing the way the crank turns.
-      const torqueMat = new THREE.MeshStandardMaterial({ color: 0xffb04a, emissive: 0xffb04a, emissiveIntensity: 0.6, roughness: 0.4 });
+      const torqueMat = new THREE.MeshStandardMaterial({ color: 0xfb923c, emissive: 0xfb923c, emissiveIntensity: 0.6, roughness: 0.4 });
       const torque = new THREE.Group();
       torque.position.set(-2.98, 0, 0);
       mesh(new THREE.TorusGeometry(0.82, 0.045, 10, 60, Math.PI * 0.75).rotateY(Math.PI / 2), torqueMat, torque);
@@ -2007,7 +2201,7 @@
 
     function buildIntake(root) {
       const glass = std('intake', {
-        color: 0x8fd3ff, metalness: 0.1, roughness: 0.15,
+        color: 0x7dd3fc, metalness: 0.1, roughness: 0.15,
         transparent: true, opacity: 0.28, depthWrite: false, side: THREE.DoubleSide
       });
       const metal = std('throttle', { color: 0xa9b4c0, metalness: 0.85, roughness: 0.3 });
@@ -2370,14 +2564,14 @@
       scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
       scene.environmentIntensity = 0.6;
       pmrem.dispose();
-      scene.add(new THREE.HemisphereLight(0xcfe6ff, 0x1a222d, 0.9));
+      scene.add(new THREE.HemisphereLight(0xdfe3ff, 0x141827, 0.9));
       const key = new THREE.DirectionalLight(0xffffff, 1.6);
       key.position.set(-4, 9, 7);
       scene.add(key);
-      const rim = new THREE.DirectionalLight(0x9fd8ff, 0.8);
+      const rim = new THREE.DirectionalLight(0xb9a8ff, 0.9);
       rim.position.set(5, 4, -8);
       scene.add(rim);
-      const grid = new THREE.GridHelper(20, 40, 0x2b3b55, 0x1a2536);
+      const grid = new THREE.GridHelper(20, 40, 0x2e3354, 0x161a2b);
       grid.position.y = -1.3;
       grid.material.transparent = true;
       grid.material.opacity = 0.55;
@@ -2725,7 +2919,7 @@
       }
       torque.visible = Boolean(step.torqueArrow);
       if (torque.visible) {
-        torqueMat.color.setHex(s.torque >= 0 ? 0xffb04a : 0x7f93ad);
+        torqueMat.color.setHex(s.torque >= 0 ? 0xfb923c : 0x94a3b8);
         torqueMat.emissive.copy(torqueMat.color);
         torqueMat.emissiveIntensity = 0.25 + Math.min(1.2, Math.abs(s.torque) / 250);
         torqueLabel.obj.visible = sim.show.labels;
@@ -2847,26 +3041,26 @@
       rows.t = { y, h: 19 * u };
       chart.rows = rows;
 
-      g.font = '700 10px Inter, system-ui, sans-serif';
+      g.font = '500 10px "JetBrains Mono", ui-monospace, monospace';
       g.textBaseline = 'middle';
       for (let d = 0; d <= 720; d += 90) {
-        g.strokeStyle = d % 180 === 0 ? 'rgba(159, 176, 197, 0.3)' : 'rgba(159, 176, 197, 0.12)';
+        g.strokeStyle = d % 180 === 0 ? 'rgba(148, 163, 184, 0.22)' : 'rgba(148, 163, 184, 0.08)';
         g.lineWidth = 1;
         g.beginPath();
         g.moveTo(X(d), 12);
         g.lineTo(X(d), h);
         g.stroke();
-        g.fillStyle = 'rgba(159, 176, 197, 0.9)';
+        g.fillStyle = 'rgba(143, 155, 176, 0.9)';
         g.textAlign = d === 0 ? 'left' : d === 720 ? 'right' : 'center';
         g.fillText(`${d}°`, X(d), 6);
       }
       const label = (text, row, sub) => {
         g.textAlign = 'left';
-        g.fillStyle = 'rgba(238, 245, 255, 0.9)';
+        g.fillStyle = 'rgba(238, 241, 247, 0.9)';
         g.font = '800 10px Inter, system-ui, sans-serif';
         g.fillText(text, 6, sub ? row.y + 6 : row.y + row.h / 2);
         if (sub) {
-          g.fillStyle = 'rgba(159, 176, 197, 0.85)';
+          g.fillStyle = 'rgba(143, 155, 176, 0.85)';
           g.font = '700 9px Inter, system-ui, sans-serif';
           g.fillText(sub, 6, row.y + 18);
         }
@@ -2889,15 +3083,15 @@
           }
         }
         span(mod(cyl.fireOffset + t.injStart, 720), t.injDeg, (x0, x1) => {
-          g.fillStyle = '#7ee787';
+          g.fillStyle = TOKENS.inj;
           g.fillRect(x0, r.y + r.h * 0.7, Math.max(1.5, x1 - x0), r.h * 0.3);
         });
         span(mod(cyl.fireOffset + t.sparkAt - t.dwellDeg, 720), t.dwellDeg, (x0, x1) => {
-          g.fillStyle = 'rgba(255, 209, 102, 0.95)';
+          g.fillStyle = hexA(TOKENS.ign, 0.95);
           g.fillRect(x0, r.y, Math.max(1.5, x1 - x0), r.h * 0.3);
         });
         const xs = X(mod(cyl.fireOffset + t.sparkAt, 720));
-        g.strokeStyle = '#fff3a0';
+        g.strokeStyle = '#fef9c3';
         g.lineWidth = 2;
         g.beginPath();
         g.moveTo(xs, r.y - 1);
@@ -2906,9 +3100,9 @@
       });
 
       label('CKP', rows.ckp);
-      g.fillStyle = 'rgba(255, 107, 107, 0.22)';
+      g.fillStyle = 'rgba(248, 113, 113, 0.2)';
       for (const gap of [270, 630]) g.fillRect(X(gap - 7), rows.ckp.y - 1, X(14) - X(0), rows.ckp.h + 2);
-      g.strokeStyle = '#8ec2ff';
+      g.strokeStyle = TOKENS.sensor;
       g.lineWidth = 1;
       g.beginPath();
       for (let x = L; x <= R; x += 0.5) {
@@ -2941,7 +3135,7 @@
           else g.moveTo(X(d), yy);
         }
         g.stroke();
-        g.fillStyle = 'rgba(255, 220, 170, 0.95)';
+        g.fillStyle = '#fed7aa';
         g.font = '800 9px Inter, system-ui, sans-serif';
         g.textAlign = 'left';
         g.fillText(`C${cyl.number}`, X(mod(cyl.fireOffset + 16, 720)) + 4, rows.p.y + 5);
@@ -2952,7 +3146,7 @@
       chart.tRange = [tLo, tHi];
       const ty = v => rows.t.y + rows.t.h * (tHi - v) / (tHi - tLo);
       label('Torque', rows.t, 'gas, N·m');
-      g.strokeStyle = 'rgba(159, 176, 197, 0.35)';
+      g.strokeStyle = 'rgba(148, 163, 184, 0.3)';
       g.beginPath();
       g.moveTo(L, ty(0));
       g.lineTo(R, ty(0));
@@ -2962,9 +3156,9 @@
       for (let d = 0; d <= 720; d++) g.lineTo(X(d), ty(curves.torque[d]));
       g.lineTo(X(720), ty(0));
       g.closePath();
-      g.fillStyle = 'rgba(255, 176, 74, 0.28)';
+      g.fillStyle = hexA(strokeColors.Power, 0.22);
       g.fill();
-      g.strokeStyle = 'rgba(255, 190, 110, 0.95)';
+      g.strokeStyle = hexA(strokeColors.Power, 0.95);
       g.lineWidth = 1.5;
       g.beginPath();
       for (let d = 0; d <= 720; d++) {
@@ -2973,13 +3167,13 @@
       }
       g.stroke();
       g.setLineDash([4, 4]);
-      g.strokeStyle = 'rgba(102, 227, 196, 0.9)';
+      g.strokeStyle = hexA(TOKENS.accent, 0.9);
       g.beginPath();
       g.moveTo(L, ty(curves.tMean));
       g.lineTo(R, ty(curves.tMean));
       g.stroke();
       g.setLineDash([]);
-      g.fillStyle = 'rgba(102, 227, 196, 0.95)';
+      g.fillStyle = TOKENS.accent;
       g.textAlign = 'right';
       g.fillText(`mean ${f0(curves.tMean)} N·m`, R - 4, ty(curves.tMean) - 7);
       return c;
@@ -3006,13 +3200,13 @@
       g.drawImage(chart.base, 0, 0);
       g.setTransform(dpr, 0, 0, dpr, 0, 0);
       const x = chart.x(s.crank);
-      g.strokeStyle = '#66e3c4';
+      g.strokeStyle = TOKENS.accent;
       g.lineWidth = 2;
       g.beginPath();
       g.moveTo(x, 12);
       g.lineTo(x, h);
       g.stroke();
-      g.fillStyle = '#66e3c4';
+      g.fillStyle = TOKENS.accent;
       g.beginPath();
       g.moveTo(x - 6, 0);
       g.lineTo(x + 6, 0);
@@ -3080,9 +3274,13 @@
       const e = s.ecu;
       const t = s.timing;
       setText(dom.status, `${f0(s.crank)}° · turn ${s.crank < 360 ? 1 : 2} of 2 · ${sim.playing ? 'playing' : 'paused'}`);
+      dom.status.dataset.state = sim.playing ? 'playing' : 'paused';
       setText(dom.play, sim.playing ? '❚❚ Pause' : '▶ Play');
       const angleValue = String(Math.round(s.crank) % 720);
-      if (dom.angle.value !== angleValue) dom.angle.value = angleValue;
+      if (dom.angle.value !== angleValue) {
+        dom.angle.value = angleValue;
+        paintRange(dom.angle);
+      }
       setText(dom.angleOut, `${f0(s.crank)}°`);
 
       const tooth = lastTooth(s.crank);
@@ -3206,7 +3404,15 @@
       syncOutputs();
     }
 
+    // Gradient fill up to the thumb (WebKit has no native range progress styling).
+    function paintRange(input) {
+      const min = Number(input.min);
+      const max = Number(input.max);
+      input.style.setProperty('--fill', `${(Number(input.value) - min) / (max - min) * 100}%`);
+    }
+
     function syncOutputs() {
+      for (const input of [dom.angle, dom.slowmo, dom.rpm, dom.throttle, dom.temp]) paintRange(input);
       setText(dom.slowmoOut, `${sim.slowmo.toFixed(3)}x · ${f0(sim.rpm / 60 * 360 * sim.slowmo)}°/s`);
       setText(dom.rpmOut, String(sim.rpm));
       setText(dom.throttleOut, `${sim.throttle}%`);
@@ -3298,6 +3504,7 @@
     dom.angle.addEventListener('input', () => {
       sim.playing = false;
       setCrank(Number(dom.angle.value));
+      paintRange(dom.angle);
     });
     dom.slowmo.addEventListener('input', () => {
       sim.slowmo = Number(dom.slowmo.value);
